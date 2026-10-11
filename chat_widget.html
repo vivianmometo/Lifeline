@@ -1,0 +1,305 @@
+<div id="chat-widget-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+    <!-- Chat Button -->
+    <button id="chat-toggle-btn"
+        class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center p-0"
+        style="width: 60px; height: 60px; transition: transform 0.3s ease;">
+        <i class="fas fa-comment-medical fa-2x"></i>
+    </button>
+
+    <!-- Chat Window -->
+    <div id="chat-window" class="card shadow-lg d-none mt-2"
+        style="width: 350px; max-height: 500px; display: flex; flex-direction: column;">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-2">
+            <h5 class="mb-0 fs-6"><i class="fas fa-robot me-2"></i>Pharmacy Assistant</h5>
+            <button id="chat-close-btn" class="btn btn-link text-white p-0"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div id="chat-messages" class="card-body overflow-auto bg-light" style="height: 350px;">
+            <!-- Initial Greeting -->
+            <div class="d-flex flex-column align-items-start mb-2">
+                <div class="bg-white text-dark p-2 rounded shadow-sm" style="max-width: 85%; font-size: 0.9rem;">
+                    <strong>Disclaimer:</strong> I am an AI assistant. I cannot diagnose medical conditions or prescribe
+                    medication. For medical advice, please consult a pharmacist.
+                </div>
+            </div>
+            <div class="d-flex flex-column align-items-start mb-2">
+                <div class="bg-primary text-white p-2 rounded shadow-sm" style="max-width: 85%; font-size: 0.9rem;">
+                    Hello! How can I assist you today?
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer p-2 bg-white">
+            <form id="chat-form" class="d-flex align-items-center">
+                <input type="text" id="chat-input" class="form-control form-control-sm me-2"
+                    placeholder="Type a message..." required>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-paper-plane"></i></button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .chat-chip {
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.85rem;
+    }
+
+    .chat-chip:hover {
+        background-color: #e9ecef !important;
+        transform: translateY(-1px);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chatBtn = document.getElementById('chat-toggle-btn');
+        const chatWindow = document.getElementById('chat-window');
+        const closeBtn = document.getElementById('chat-close-btn');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+        const isLoggedIn = {{ 'true' if current_user.is_authenticated else 'false' }};
+    const userEmail = "{{ current_user.email if current_user.is_authenticated else '' }}";
+
+    // Toggle Chat Window
+    chatBtn.addEventListener('click', () => {
+        chatWindow.classList.toggle('d-none');
+        chatBtn.style.display = 'none';
+        if (!chatWindow.classList.contains('d-none')) {
+            chatInput.focus();
+            // Send initial greeting request if empty (optional, but good for suggested actions)
+            if (chatMessages.children.length <= 2) { // Only disclaimer + first hello
+                // Could manually trigger a "hello" to get chips, or just hardcode initial chips
+                addSuggestions(["Store Hours", "Services", "Register", "Locations"]);
+            }
+        }
+    });
+
+    closeBtn.addEventListener('click', () => {
+        chatWindow.classList.add('d-none');
+        chatBtn.style.display = 'flex';
+    });
+
+    // Auto-scroll to bottom
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Add Message to UI
+    function addMessage(text, isUser) {
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.className = isUser ? 'd-flex flex-column align-items-end mb-2' : 'd-flex flex-column align-items-start mb-2';
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = isUser ? 'bg-success text-white p-2 rounded shadow-sm' : 'bg-primary text-white p-2 rounded shadow-sm';
+        messageDiv.style.maxWidth = '85%';
+        messageDiv.style.fontSize = '0.9rem';
+        messageDiv.textContent = text;
+
+        wrapperDiv.appendChild(messageDiv);
+        chatMessages.appendChild(wrapperDiv);
+        scrollToBottom();
+    }
+
+    function addSuggestions(actions) {
+        if (!actions || actions.length === 0) return;
+
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.className = 'd-flex flex-wrap gap-2 mb-2 ms-1';
+
+        actions.forEach(action => {
+            const chip = document.createElement('span');
+            chip.className = 'badge bg-light text-primary border border-primary chat-chip p-2 me-1 mb-1';
+            chip.textContent = action;
+            chip.onclick = () => {
+                chatInput.value = action;
+                chatForm.dispatchEvent(new Event('submit')); // Trigger submit
+            };
+            wrapperDiv.appendChild(chip);
+        });
+
+        chatMessages.appendChild(wrapperDiv);
+        scrollToBottom();
+    }
+
+    function addLoading() {
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.id = 'chat-loading';
+        wrapperDiv.className = 'd-flex flex-column align-items-start mb-2';
+        wrapperDiv.innerHTML = '<div class="bg-light text-secondary p-2 rounded shadow-sm" style="font-size: 0.8rem;"><em>Typing...</em></div>';
+        chatMessages.appendChild(wrapperDiv);
+        scrollToBottom();
+    }
+
+    function removeLoading() {
+        const loading = document.getElementById('chat-loading');
+        if (loading) loading.remove();
+    }
+
+    function addEscalationButton() {
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.className = 'd-flex flex-column align-items-center mb-2';
+
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-warning btn-sm shadow-sm';
+        btn.innerHTML = '<i class="fas fa-user-md me-1"></i> Contact Pharmacist';
+        btn.onclick = function () {
+            btn.disabled = true;
+            initiateEscalation();
+        };
+
+        wrapperDiv.appendChild(btn);
+        chatMessages.appendChild(wrapperDiv);
+        scrollToBottom();
+    }
+
+    function initiateEscalation() {
+        // isLoggedIn is now defined in parent scope
+        // userEmail is now defined in parent scope
+
+        if (isLoggedIn) {
+            // Auto-escalate for logged-in users
+            addMessage("Connecting you to a pharmacist...", false);
+            addLoading();
+
+            // Artificial delay for UX
+            setTimeout(async () => {
+                try {
+                    const response = await fetch('/api/chat/escalate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': "{{ csrf_token() }}"
+                        },
+                        body: JSON.stringify({
+                            message: "User requested pharmacist assistance via chat (Auto-escalated).",
+                            contact: userEmail // Send email as contact
+                        })
+                    });
+
+                    removeLoading();
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        addMessage(data.message || 'Request sent! A pharmacist will be with you shortly.', false);
+                    } else {
+                        addMessage("Failed to send request. Please try again later.", false);
+                    }
+                } catch (error) {
+                    removeLoading();
+                    addMessage("Network error.", false);
+                }
+            }, 1000);
+            return;
+        }
+
+        // For guests, prompt to login
+        addMessage("To connect with a pharmacist directly, please log in to your account.", false);
+
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.className = 'd-flex flex-column align-items-center mb-2';
+
+        const loginBtn = document.createElement('a');
+        loginBtn.href = "{{ url_for('auth.login') }}";
+        loginBtn.className = 'btn btn-sm btn-primary mb-1';
+        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt me-1"></i> Login';
+
+        const registerBtn = document.createElement('a');
+        registerBtn.href = "{{ url_for('auth.register') }}";
+        registerBtn.className = 'btn btn-sm btn-outline-primary';
+        registerBtn.innerHTML = '<i class="fas fa-user-plus me-1"></i> Register';
+
+        wrapperDiv.appendChild(loginBtn);
+        wrapperDiv.appendChild(registerBtn);
+        chatMessages.appendChild(wrapperDiv);
+        scrollToBottom();
+    }
+
+    async function defaultSubmitHandler(e) {
+        e.preventDefault();
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        addMessage(message, true);
+        chatInput.value = '';
+        addLoading();
+
+        try {
+            const response = await fetch('/api/chat/message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': "{{ csrf_token() }}"
+                },
+                body: JSON.stringify({ message: message })
+            });
+
+            removeLoading();
+
+            if (response.ok) {
+                const data = await response.json();
+                addMessage(data.response, false);
+
+                if (data.suggested_actions) {
+                    addSuggestions(data.suggested_actions);
+                }
+
+                if (data.suggest_escalation) {
+                    addEscalationButton();
+                }
+            } else {
+                addMessage("Sorry, I encountered an error. Please try again.", false);
+            }
+
+        } catch (error) {
+            removeLoading();
+            console.error('Chat Error:', error);
+            addMessage("Network error. Please check your connection.", false);
+        }
+    }
+
+    // Attach initial listener
+    chatForm.addEventListener('submit', defaultSubmitHandler);
+
+    // Poll for pharmacist replies
+    if (isLoggedIn) {
+        setInterval(function () {
+            // Only poll if chat window is open (optimization) or always? 
+            // Let's poll always to show badge if we had one, but for now just check
+            fetch('/api/chat/replies')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.replies && data.replies.length > 0) {
+                        // If chat window is closed, maybe open it? Or just play sound?
+                        // For now, just append messages
+                        data.replies.forEach(reply => {
+                            // Add with special styling
+                            addPharmacistMessage(reply.message);
+                            if (chatWindow.classList.contains('d-none')) {
+                                chatBtn.click(); // Auto-open chat
+                            }
+                        });
+                    }
+                })
+                .catch(e => console.error("Polling error", e));
+        }, 5000); // Check every 5 seconds
+    }
+
+    function addPharmacistMessage(text) {
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.className = 'd-flex flex-column align-items-start mb-2';
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'bg-warning text-dark p-2 rounded shadow-sm border border-warning';
+        messageDiv.style.maxWidth = '85%';
+        messageDiv.style.fontSize = '0.9rem';
+        messageDiv.innerHTML = '<strong><i class="fas fa-user-md me-1"></i>Pharmacist:</strong><br>' + text;
+
+        wrapperDiv.appendChild(messageDiv);
+        chatMessages.appendChild(wrapperDiv);
+        scrollToBottom();
+    }
+    });
+</script>

@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">System Reports</h1>
+        <div class="d-none d-sm-inline-block">
+            <button class="btn btn-sm btn-primary shadow-sm" onclick="generatePDFReport()">
+                <i class="fas fa-download fa-sm text-white-50 me-2"></i>Export Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row">
+        <!-- Inventory Stats -->
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Medicines
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_medicines }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-pills fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Low Stock
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ low_stock_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Out of Stock
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ out_of_stock_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Expiring Soon
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ expiring_soon }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-times fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Users
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_users }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-md-4 mb-4">
+            <div class="card border-left-secondary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                                Total Branches
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_branches }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-hospital fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Reports -->
+    <div class="row">
+        <!-- Medicine Distribution -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Medicine Distribution by Category</h6>
+                </div>
+                <div class="card-body">
+                    {% if medicine_distribution %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                           <tbody>
+                                {% for category, count in medicine_distribution %}
+                                {% set total_count = medicine_distribution|sum(attribute='1') %}
+                                {% set percentage = (count / total_count * 100)|round(1) if total_count > 0 else 0 %}
+                                <tr>
+                                    <td>{{ category|title }}</td>
+                                    <td>{{ count }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" 
+                                                role="progressbar" 
+                                                data-percentage="{{ percentage }}"
+                                                aria-valuenow="{{ percentage }}" 
+                                                aria-valuemin="0" 
+                                                aria-valuemax="100">
+                                                {{ percentage }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="font-weight-bold">
+                                    <td>Total</td>
+                                    <td>{{ medicine_distribution|sum(attribute='1') }}</td>
+                                    <td>100%</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No medicine data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Regional Stock -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Regional Stock Levels</h6>
+                </div>
+                <div class="card-body">
+                    {% if regional_stock %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Region</th>
+                                    <th>Total Stock</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for region, stock in regional_stock %}
+                                <tr>
+                                    <td>{{ region|title }}</td>
+                                    <td>{{ stock or 0 }}</td>
+                                    <td>
+                                        {% if not stock or stock == 0 %}
+                                        <span class="badge bg-danger">No Stock</span>
+                                        {% elif stock > 100 %}
+                                        <span class="badge bg-success">High</span>
+                                        {% elif stock > 50 %}
+                                        <span class="badge bg-warning">Medium</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Low</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No regional stock data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Statistics -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">User Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-success">
+                                <div class="card-body">
+                                    <h5 class="card-title text-success">{{ active_users }}</h5>
+                                    <p class="card-text">Active Users</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-info">
+                                <div class="card-body">
+                                    <h5 class="card-title text-info">{{ admin_users }}</h5>
+                                    <p class="card-text">Admins</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-warning">
+                                <div class="card-body">
+                                    <h5 class="card-title text-warning">{{ pharmacist_users }}</h5>
+                                    <p class="card-text">Pharmacists</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-secondary">
+                                <div class="card-body">
+                                    <h5 class="card-title text-secondary">{{ recent_notifications }}</h5>
+                                    <p class="card-text">Recent Alerts</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Health -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">System Health</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            Expired Medicines
+                            <span class="badge bg-danger rounded-pill">{{ expired_medicines }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            Low Stock Items
+                            <span class="badge bg-warning rounded-pill">{{ low_stock_count }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            Out of Stock Items
+                            <span class="badge bg-danger rounded-pill">{{ out_of_stock_count }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            Medicines Expiring Soon
+                            <span class="badge bg-info rounded-pill">{{ expiring_soon }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Data Refresh -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Real-time Data</h6>
+                    <button class="btn btn-sm btn-primary" onclick="refreshReports()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary" id="live-total-medicines">{{ total_medicines }}</h5>
+                                    <p class="card-text">Total Medicines</p>
+                                    <small class="text-muted">Last updated: <span id="last-updated">{{ today.strftime('%Y-%m-%d %H:%M') }}</span></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title text-warning" id="live-low-stock">{{ low_stock_count }}</h5>
+                                    <p class="card-text">Low Stock Items</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title text-danger" id="live-out-of-stock">{{ out_of_stock_count }}</h5>
+                                    <p class="card-text">Out of Stock</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title text-success" id="live-total-users">{{ total_users }}</h5>
+                                    <p class="card-text">Total Users</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+<style>
+.progress-bar {
+    width: 0%;
+    transition: width 0.5s ease-in-out;
+}
+</style>
+
+{% block scripts %}
+<script>
+// Auto-refresh progress bars on page load
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.progress-bar').forEach(function(bar) {
+        const percentage = bar.getAttribute('data-percentage');
+        bar.style.width = percentage + '%';
+    });
+    console.log('Reports page loaded successfully');
+});
+
+// Refresh reports data
+function refreshReports() {
+    const refreshBtn = event.target;
+    const originalText = refreshBtn.innerHTML;
+    
+    // Show loading state
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...';
+    refreshBtn.disabled = true;
+    
+    // Simulate API call - in real implementation, this would fetch from your backend
+    setTimeout(() => {
+        // Reload the page to get fresh data
+        window.location.reload();
+    }, 1000);
+}
+
+// Generate PDF report
+function generatePDFReport() {
+    // Show loading state
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+    btn.disabled = true;
+    
+    // In a real implementation, this would call your backend to generate a PDF
+    setTimeout(() => {
+        alert('PDF report generation would be implemented here. This would connect to your backend to generate a comprehensive report.');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }, 1500);
+}
+
+// Auto-refresh every 5 minutes (300000 ms)
+setTimeout(() => {
+    if(confirm('Would you like to refresh the reports data?')) {
+        refreshReports();
+    }
+}, 300000);
+</script>
+{% endblock %}

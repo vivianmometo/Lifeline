@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Branches - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Branch Management</h1>
+        <a href="{{ url_for('admin.add_branch') }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50 me-2"></i>Add New Branch
+        </a>
+    </div>
+
+    <!-- Branches Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Healthcare Facilities</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="branchesTable" width="100%" cellspacing="0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-white">Branch Name</th>
+                            <th class="text-white">Region</th>
+                            <th class="text-white">Address</th>
+                            <th class="text-white">Phone</th>
+                            <th class="text-white">Created</th>
+                            <th class="text-white">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for branch in branches %}
+                        <tr>
+                            <td>
+                                <strong>{{ branch.name }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ branch.region|title }}</span>
+                            </td>
+                            <td>
+                                {% if branch.address %}
+                                    {{ branch.address }}
+                                {% else %}
+                                    <span class="text-muted">Not specified</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if branch.phone %}
+                                    {{ branch.phone }}
+                                {% else %}
+                                    <span class="text-muted">Not specified</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ branch.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="#" class="btn btn-outline-info" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-outline-primary" title="Edit Branch">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger" 
+                                            onclick="confirmDelete('{{ branch.branch_id }}')"
+                                            title="Delete Branch">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Region Statistics -->
+    <div class="row">
+        {% set regions = {
+            'north': 'primary',
+            'south': 'success', 
+            'east': 'warning',
+            'west': 'danger',
+            'central': 'info'
+        } %}
+        
+        {% for region, color in regions.items() %}
+        <div class="col-xl-2 col-md-4 col-6 mb-4">
+            <div class="card border-left-{{ color }} shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-{{ color }} text-uppercase mb-1">
+                                {{ region|title }} Region
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ branches|selectattr('region', 'equalto', region)|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-hospital fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(branchId) {
+    if (confirm('Are you sure you want to delete this branch? This action cannot be undone.')) {
+        alert('Delete functionality would be implemented here for branch ID: ' + branchId);
+        setTimeout(() => location.reload(), 1000);
+    }
+}
+
+// Initialize DataTable
+$(document).ready(function() {
+    $('#branchesTable').DataTable({
+        pageLength: 25,
+        order: [[4, 'desc']]
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,598 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Notifications</h1>
+        <div class="d-none d-sm-inline-block">
+            <form method="POST" action="{{ url_for('pharmacist.mark_all_notifications_read') }}"
+                style="display: inline;">
+                <button type="submit" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-check-double me-2"></i>Mark All as Read
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="notificationsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all"
+                                type="button" role="tab">
+                                All Notifications
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="unread-tab" data-bs-toggle="tab" data-bs-target="#unread"
+                                type="button" role="tab">
+                                Unread
+                                <span class="badge bg-danger ms-1" id="unread-badge">
+                                    {{ notifications|selectattr('is_read', 'equalto', false)|list|length }}
+                                </span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stock"
+                                type="button" role="tab">
+                                Stock Alerts
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system"
+                                type="button" role="tab">
+                                System
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="inquiries-tab" data-bs-toggle="tab" data-bs-target="#inquiries"
+                                type="button" role="tab">
+                                User Inquiries
+                                <span class="badge bg-warning ms-1" id="inquiries-badge">
+                                    {{ notifications|selectattr('type', 'equalto', 'user_inquiry')|selectattr('is_read',
+                                    'equalto', false)|list|length }}
+                                </span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="notificationsTabsContent">
+
+                        <!-- All Notifications -->
+                        <div class="tab-pane fade show active" id="all" role="tabpanel">
+                            {% if notifications %}
+                            <div class="list-group list-group-flush">
+                                {% for notification in notifications %}
+                                <div class="list-group-item px-0 {% if not notification.is_read %}bg-light{% endif %}">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <!-- UPDATED: Dynamic icons based on type and priority -->
+                                                <i class="fas 
+                                                    {% if notification.type == 'available' or notification.type == 'user_approved' or notification.type == 'branch_assigned' %}fa-check-circle text-success
+                                                    {% elif notification.type == 'out_of_stock' or notification.type == 'user_rejected' %}fa-times-circle text-danger
+                                                    {% elif notification.type == 'low_stock' or notification.type == 'expiry_warning' %}fa-exclamation-triangle text-warning
+                                                    {% elif notification.priority == 'high' %}fa-exclamation-circle text-danger
+                                                    {% elif notification.priority == 'medium' %}fa-info-circle text-warning
+                                                    {% else %}fa-bell text-info{% endif %} 
+                                                    me-2 fa-lg"></i>
+                                                <!-- UPDATED: Use notification.title instead of hardcoded text -->
+                                                <h6 class="mb-0">{{ notification.title }}</h6>
+                                                {% if not notification.is_read %}
+                                                <span class="badge bg-primary ms-2">New</span>
+                                                {% endif %}
+                                                <!-- UPDATED: Priority badge -->
+                                                <span
+                                                    class="badge bg-{{ 'danger' if notification.priority == 'high' else 'warning' if notification.priority == 'medium' else 'info' }} ms-2">
+                                                    {{ notification.priority|title }}
+                                                </span>
+                                            </div>
+                                            <!-- UPDATED: Use notification.message directly -->
+                                            <p class="mb-1">{{ notification.message }}</p>
+                                            <small class="text-muted">
+                                                <!-- UPDATED: Show branch name if available -->
+                                                {% if notification.branch %}
+                                                <i class="fas fa-hospital me-1"></i>{{ notification.branch.name }} •
+                                                {% endif %}
+                                                <!-- UPDATED: Show medicine name if available -->
+                                                {% if notification.medicine %}
+                                                <i class="fas fa-pills me-1"></i>{{ notification.medicine.name }} •
+                                                {% endif %}
+                                                <i class="fas fa-clock me-1"></i>{{
+                                                notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                            </small>
+                                        </div>
+                                        <div class="btn-group ms-3">
+                                            {% if not notification.is_read %}
+                                            <a href="{{ url_for('pharmacist.mark_notification_read', notification_id=notification.id) }}"
+                                                class="btn btn-sm btn-outline-success" title="Mark as Read">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                            {% endif %}
+                                            <!-- UPDATED: Only show inventory link for inventory-related notifications -->
+                                            {% if notification.type in ['low_stock', 'out_of_stock', 'available',
+                                            'expiry_warning'] %}
+                                            <a href="{{ url_for('pharmacist.inventory') }}"
+                                                class="btn btn-sm btn-outline-info" title="View Inventory">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No Notifications</h5>
+                                <p class="text-muted">You're all caught up! New notifications will appear here.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Unread Notifications -->
+                        <div class="tab-pane fade" id="unread" role="tabpanel">
+                            {% set unread_notifications = notifications|selectattr('is_read', 'equalto', false) if
+                            notifications else [] %}
+                            {% if unread_notifications %}
+                            <div class="list-group list-group-flush">
+                                {% for notification in unread_notifications %}
+                                <div class="list-group-item px-0 bg-light">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas 
+                                                    {% if notification.type == 'available' or notification.type == 'user_approved' or notification.type == 'branch_assigned' %}fa-check-circle text-success
+                                                    {% elif notification.type == 'out_of_stock' or notification.type == 'user_rejected' %}fa-times-circle text-danger
+                                                    {% elif notification.type == 'low_stock' or notification.type == 'expiry_warning' %}fa-exclamation-triangle text-warning
+                                                    {% elif notification.priority == 'high' %}fa-exclamation-circle text-danger
+                                                    {% elif notification.priority == 'medium' %}fa-info-circle text-warning
+                                                    {% else %}fa-bell text-info{% endif %} 
+                                                    me-2 fa-lg"></i>
+                                                <h6 class="mb-0">{{ notification.title }}</h6>
+                                                <span class="badge bg-primary ms-2">New</span>
+                                                <span
+                                                    class="badge bg-{{ 'danger' if notification.priority == 'high' else 'warning' if notification.priority == 'medium' else 'info' }} ms-2">
+                                                    {{ notification.priority|title }}
+                                                </span>
+                                            </div>
+                                            <p class="mb-1">{{ notification.message }}</p>
+                                            <small class="text-muted">
+                                                {% if notification.branch %}
+                                                <i class="fas fa-hospital me-1"></i>{{ notification.branch.name }} •
+                                                {% endif %}
+                                                {% if notification.medicine %}
+                                                <i class="fas fa-pills me-1"></i>{{ notification.medicine.name }} •
+                                                {% endif %}
+                                                <i class="fas fa-clock me-1"></i>{{
+                                                notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                            </small>
+                                        </div>
+                                        <div class="btn-group ms-3">
+                                            <a href="{{ url_for('pharmacist.mark_notification_read', notification_id=notification.id) }}"
+                                                class="btn btn-sm btn-outline-success" title="Mark as Read">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                            {% if notification.type in ['low_stock', 'out_of_stock', 'available',
+                                            'expiry_warning'] %}
+                                            <a href="{{ url_for('pharmacist.inventory') }}"
+                                                class="btn btn-sm btn-outline-info" title="View Inventory">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                <h5 class="text-success">All Caught Up!</h5>
+                                <p class="text-muted">You have no unread notifications.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Stock Alerts -->
+                        <div class="tab-pane fade" id="stock" role="tabpanel">
+                            {% set stock_alerts = notifications|selectattr('type', 'in', ['low_stock', 'out_of_stock',
+                            'available', 'expiry_warning']) if notifications else [] %}
+                            {% if stock_alerts %}
+                            <div class="list-group list-group-flush">
+                                {% for notification in stock_alerts %}
+                                <div class="list-group-item px-0 {% if not notification.is_read %}bg-light{% endif %}">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas 
+                                                    {% if notification.type == 'available' %}fa-check-circle text-success
+                                                    {% elif notification.type == 'out_of_stock' %}fa-times-circle text-danger
+                                                    {% elif notification.type == 'expiry_warning' %}fa-calendar-times text-warning
+                                                    {% else %}fa-exclamation-triangle text-warning{% endif %} 
+                                                    me-2 fa-lg"></i>
+                                                <h6 class="mb-0">{{ notification.title }}</h6>
+                                                {% if not notification.is_read %}
+                                                <span class="badge bg-primary ms-2">New</span>
+                                                {% endif %}
+                                                <span
+                                                    class="badge bg-{{ 'success' if notification.type == 'available' else 'danger' if notification.type == 'out_of_stock' else 'warning' }} ms-2">
+                                                    {{ notification.type|replace('_', ' ')|title }}
+                                                </span>
+                                            </div>
+                                            <p class="mb-1">{{ notification.message }}</p>
+                                            <small class="text-muted">
+                                                {% if notification.branch %}
+                                                <i class="fas fa-hospital me-1"></i>{{ notification.branch.name }} •
+                                                {% endif %}
+                                                {% if notification.medicine %}
+                                                <i class="fas fa-pills me-1"></i>{{ notification.medicine.name }} •
+                                                {% endif %}
+                                                <i class="fas fa-clock me-1"></i>{{
+                                                notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                            </small>
+                                        </div>
+                                        <div class="btn-group ms-3">
+                                            {% if not notification.is_read %}
+                                            <a href="{{ url_for('pharmacist.mark_notification_read', notification_id=notification.id) }}"
+                                                class="btn btn-sm btn-outline-success" title="Mark as Read">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                            {% endif %}
+                                            <a href="{{ url_for('pharmacist.inventory') }}"
+                                                class="btn btn-sm btn-outline-primary" title="Update Inventory">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-thumbs-up fa-3x text-success mb-3"></i>
+                                <h5 class="text-success">No Stock Alerts</h5>
+                                <p class="text-muted">All medicines have adequate stock levels.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- System Notifications -->
+                        <div class="tab-pane fade" id="system" role="tabpanel">
+                            {% set system_notifications = notifications|selectattr('type', 'in', ['system_maintenance',
+                            'new_feature', 'security_alert', 'user_registration', 'user_approved', 'user_rejected',
+                            'role_changed', 'branch_assigned']) if notifications else [] %}
+                            {% if system_notifications %}
+                            <div class="list-group list-group-flush">
+                                {% for notification in system_notifications %}
+                                <div class="list-group-item px-0 {% if not notification.is_read %}bg-light{% endif %}">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas 
+                                                    {% if notification.type == 'user_approved' or notification.type == 'branch_assigned' %}fa-check-circle text-success
+                                                    {% elif notification.type == 'user_rejected' or notification.type == 'security_alert' %}fa-times-circle text-danger
+                                                    {% elif notification.priority == 'high' %}fa-exclamation-circle text-danger
+                                                    {% elif notification.priority == 'medium' %}fa-info-circle text-warning
+                                                    {% else %}fa-bell text-info{% endif %} 
+                                                    me-2 fa-lg"></i>
+                                                <h6 class="mb-0">{{ notification.title }}</h6>
+                                                {% if not notification.is_read %}
+                                                <span class="badge bg-primary ms-2">New</span>
+                                                {% endif %}
+                                                <span
+                                                    class="badge bg-{{ 'danger' if notification.priority == 'high' else 'warning' if notification.priority == 'medium' else 'info' }} ms-2">
+                                                    {{ notification.type|replace('_', ' ')|title }}
+                                                </span>
+                                            </div>
+                                            <p class="mb-1">{{ notification.message }}</p>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>{{
+                                                notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                            </small>
+                                        </div>
+                                        <div class="btn-group ms-3">
+                                            {% if not notification.is_read %}
+                                            <a href="{{ url_for('pharmacist.mark_notification_read', notification_id=notification.id) }}"
+                                                class="btn btn-sm btn-outline-success" title="Mark as Read">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-cog fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No System Notifications</h5>
+                                <p class="text-muted">No system updates or user management notifications.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- User Inquiries -->
+                        <div class="tab-pane fade" id="inquiries" role="tabpanel">
+                            {% set inquiries = notifications|selectattr('type', 'equalto', 'user_inquiry') if
+                            notifications else [] %}
+                            {% if inquiries %}
+                            <div class="list-group list-group-flush">
+                                {% for notification in inquiries %}
+                                <div class="list-group-item px-0 {% if not notification.is_read %}bg-light{% endif %}">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-question-circle text-primary me-2 fa-lg"></i>
+                                                <h6 class="mb-0">{{ notification.title }}</h6>
+                                                {% if not notification.is_read %}
+                                                <span class="badge bg-primary ms-2">New</span>
+                                                {% endif %}
+                                                <span class="badge bg-info ms-2">Inquiry</span>
+                                            </div>
+                                            <div class="bg-white p-3 rounded border mb-2">
+                                                <p class="mb-0" style="white-space: pre-wrap;">{{ notification.message
+                                                    }}</p>
+                                            </div>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>{{
+                                                notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                            </small>
+                                        </div>
+                                        <div class="btn-group ms-3">
+                                            {% if not notification.is_read %}
+                                            <a href="{{ url_for('pharmacist.mark_notification_read', notification_id=notification.id) }}"
+                                                class="btn btn-sm btn-outline-success" title="Mark as Read">
+                                                <i class="fas fa-check"></i>
+                                            </a>
+                                            {% endif %}
+
+                                            <button type="button" class="btn btn-sm btn-primary reply-btn"
+                                                data-email="{{ notification.inquiry_contact }}"
+                                                data-id="{{ notification.id }}">
+                                                <i class="fas fa-reply"></i> Reply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No Inquiries</h5>
+                                <p class="text-muted">You have no user inquiries at this time.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UPDATED: Statistics Cards -->
+    <div class="row mt-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Notifications
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ notifications|length if notifications
+                                else 0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bell fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Unread
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="unread-count">
+                                {{ notifications|selectattr('is_read', 'equalto', false)|list|length if notifications
+                                else 0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-envelope fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Stock Alerts
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ notifications|selectattr('type', 'in', ['low_stock', 'out_of_stock',
+                                'expiry_warning'])|list|length if notifications else 0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                High Priority
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ notifications|selectattr('priority', 'equalto', 'high')|list|length if notifications
+                                else 0 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-flag fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+
+<!-- Reply Modal -->
+<div class="modal fade" id="replyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reply to Inquiry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="replyForm">
+                    <input type="hidden" id="replyEmail">
+                    <div class="mb-3">
+                        <label class="form-label">To:</label>
+                        <input type="text" class="form-control" id="replyEmailDisplay" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Message:</label>
+                        <textarea class="form-control" id="replyMessage" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="sendReplyBtn">Send Reply</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh notifications every 30 seconds
+    setInterval(function () {
+        fetch('{{ url_for("pharmacist.get_notification_count") }}')
+            .then(response => response.json())
+            .then(data => {
+                // Update unread counts
+                if (document.getElementById('unread-count')) {
+                    document.getElementById('unread-count').textContent = data.unread_count || 0;
+                }
+                if (document.getElementById('unread-badge')) {
+                    document.getElementById('unread-badge').textContent = data.unread_count || 0;
+                }
+            })
+            .catch(error => console.error('Error fetching notification count:', error));
+    }, 30000);
+
+    // Add confirmation for mark all as read
+    document.addEventListener('DOMContentLoaded', function () {
+        const markAllForm = document.querySelector('form[action*="mark_all_notifications_read"]');
+        if (markAllForm) {
+            markAllForm.addEventListener('submit', function (e) {
+                if (!confirm('Mark all notifications as read?')) {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        // Initialize Bootstrap tabs
+        var triggerTabList = [].slice.call(document.querySelectorAll('#notificationsTabs button'))
+        triggerTabList.forEach(function (triggerEl) {
+            var tabTrigger = new bootstrap.Tab(triggerEl)
+            triggerEl.addEventListener('click', function (event) {
+                event.preventDefault()
+                tabTrigger.show()
+            })
+        })
+
+
+        // Reply Modal Logic
+        const replyModal = new bootstrap.Modal(document.getElementById('replyModal'));
+
+        document.querySelectorAll('.reply-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const email = this.dataset.email;
+                if (!email || email === 'None') {
+                    alert('No contact email found for this inquiry.');
+                    return;
+                }
+                document.getElementById('replyEmail').value = email;
+                document.getElementById('replyEmailDisplay').value = email;
+                document.getElementById('replyMessage').value = '';
+                replyModal.show();
+            });
+        });
+
+        document.getElementById('sendReplyBtn').addEventListener('click', function () {
+            const email = document.getElementById('replyEmail').value;
+            const message = document.getElementById('replyMessage').value;
+            const btn = this;
+
+            if (!message) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sending...';
+
+            fetch('{{ url_for("pharmacist.reply_inquiry") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() if csrf_token else "" }}'
+                },
+                body: JSON.stringify({ email: email, message: message })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => { throw new Error(text || response.statusText) });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('Reply sent successfully!');
+                        replyModal.hide();
+                    } else {
+                        alert('Server Logic Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Request Failed: ' + error.message.substring(0, 200));
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Send Reply';
+                });
+        });
+    });
+</script>
+{% endblock %}

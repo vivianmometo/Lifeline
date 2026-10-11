@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">User Management</h1>
+        <a href="{{ url_for('admin.add_user') }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-user-plus fa-sm text-white-50 me-2"></i>Add New User
+        </a>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">System Users</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="usersTable" width="100%" cellspacing="0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-white">Username</th>
+                            <th class="text-white">Email</th>
+                            <th class="text-white">Role</th>
+                             <th class="text-white">Assigned Branch</th>
+                            <th class="text-white">Status</th>
+                            <th class="text-white">Created</th>
+                            <th class="text-white">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                <strong>{{ user.username }}</strong>
+                                {% if user.id == current_user.id %}
+                                <span class="badge bg-info ms-1">You</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'warning' if user.role == 'pharmacist' else 'info' }}">
+                                    {{ user.role|title }}
+                                </span>
+                            </td>
+                              <td>
+                                {% if user.branch %}
+                                    <span class="badge bg-secondary">{{ user.branch.name }}</span>
+                                {% else %}
+                                    <span class="text-muted">Not assigned</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" 
+                                       class="btn btn-outline-primary" title="Edit User">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if user.id != current_user.id %}
+                                    <button type="button" class="btn btn-outline-{{ 'warning' if user.is_active else 'success' }}"
+                                           onclick="toggleUserStatus('{{ user.id }}', '{{ user.is_active|lower }}')"
+                                            title="{{ 'Deactivate' if user.is_active else 'Activate' }} User">
+                                        <i class="fas fa-{{ 'ban' if user.is_active else 'check' }}"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Statistics -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Users
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ users|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Administrators
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ users|selectattr('role', 'equalto', 'admin')|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-shield fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Pharmacists
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ users|selectattr('role', 'equalto', 'pharmacist')|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-md fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Public Users
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ users|selectattr('role', 'equalto', 'public')|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleUserStatus(userId, isActive) {
+    if (confirm(`Are you sure you want to ${isActive ? 'deactivate' : 'activate'} this user?`)) {
+        // Simple page reload for demo - in production, use AJAX
+        alert(`User status toggle would be implemented here for user ID: ${userId}, current status: ${isActive}`);
+        // For now, just reload the page
+        setTimeout(() => location.reload(), 1000);
+    }
+}
+
+// Initialize DataTable
+$(document).ready(function() {
+    $('#usersTable').DataTable({
+        pageLength: 25,
+        order: [[4, 'desc']]
+    });
+});
+</script>
+{% endblock %}

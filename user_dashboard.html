@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}My Health Dashboard - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">My Health Dashboard</h1>
+        <span class="badge bg-info text-white">Patient Portal</span>
+    </div>
+
+    <!-- User Action Cards -->
+    <div class="row">
+        <!-- Search Medicines -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Find Medication</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Search Medicines</div>
+                            <p class="mb-0 small mt-2">Check availability and prices</p>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-search fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('main.search_medicines') }}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Symptom Checker -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                AI Assistant</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Symptom Checker</div>
+                            <p class="mb-0 small mt-2">Chat with our AI health assistant</p>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-md fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <a href="#" onclick="document.getElementById('chat-widget-button').click(); return false;"
+                        class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Medications -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Prescriptions</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">My Medications</div>
+                            <p class="mb-0 small mt-2">View active prescriptions</p>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-pills fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- My Health Questions / Inquiries -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">My Health Questions (Pharmacist Replies)</h6>
+                </div>
+                <div class="card-body">
+                    {% if replies %}
+                    <div class="list-group list-group-flush">
+                        {% for reply in replies %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 text-primary">{{ reply.title }}</h6>
+                                <small>{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <p class="mb-1">{{ reply.message }}</p>
+                            <small class="text-muted">Status: Read</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2665/2665447.png" width="64"
+                            class="mb-3 opacity-50" alt="No messages">
+                        <p class="text-muted">No replies from pharmacists yet.</p>
+                        <p class="small text-muted">Use the chat widget to ask a question!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Drug Information Quick Links -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">Popular Drug Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{{ url_for('main.search_medicines', q='Paracetamol') }}"
+                            class="list-group-item list-group-item-action">
+                            <i class="fas fa-tablets me-2 text-secondary"></i> Paracetamol
+                        </a>
+                        <a href="{{ url_for('main.search_medicines', q='Ibuprofen') }}"
+                            class="list-group-item list-group-item-action">
+                            <i class="fas fa-capsules me-2 text-secondary"></i> Ibuprofen
+                        </a>
+                        <a href="{{ url_for('main.search_medicines', q='Amoxicillin') }}"
+                            class="list-group-item list-group-item-action">
+                            <i class="fas fa-prescription-bottle me-2 text-secondary"></i> Antibiotics
+                        </a>
+                        <a href="{{ url_for('main.search_medicines') }}"
+                            class="list-group-item list-group-item-action text-center text-primary">
+                            Browse All <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

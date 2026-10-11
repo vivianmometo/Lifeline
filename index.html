@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Lifeline Government Pharmacy System{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="jumbotron bg-primary text-white py-5 rounded">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold">Lifeline Government Pharmacy Information System</h1>
+                <p class="lead">Ensuring medicine availability across all government healthcare facilities. Find, track, and manage pharmaceutical supplies efficiently.</p>
+                <a href="{{ url_for('main.search_medicines') }}" class="btn btn-light btn-lg mt-3">
+                    <i class="fas fa-search"></i> Find Medicines Near You
+                </a>
+            </div>
+            <div class="col-lg-4 text-center">
+                <i class="fas fa-clinic-medical display-1"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container mt-5">
+    <div class="row text-center mb-5">
+        <div class="col">
+            <h2 class="fw-bold">System Features</h2>
+            <p class="text-muted">Comprehensive medicine management for better healthcare</p>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                    <h5 class="card-title">Medicine Search</h5>
+                    <p class="card-text">Find available medicines across all government hospitals and health centers in real-time.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                    <h5 class="card-title">Stock Monitoring</h5>
+                    <p class="card-text">Track medicine stock levels, identify shortages, and optimize supply chain management.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <i class="fas fa-bell fa-3x text-warning mb-3"></i>
+                    <h5 class="card-title">Smart Notifications</h5>
+                    <p class="card-text">Get alerts when out-of-stock medicines become available or when stock levels are low.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Search Section -->
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="search-form">
+                <h4 class="text-center mb-4">Find Medicines Instantly</h4>
+                <form action="{{ url_for('main.search_medicines') }}" method="GET">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" name="q" class="form-control form-control-lg" 
+                                   placeholder="Enter medicine name..." value="{{ request.args.get('q', '') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <select name="region" class="form-select form-select-lg">
+                                <option value="">All Regions</option>
+                                <option value="north">North Region</option>
+                                <option value="south">South Region</option>
+                                <option value="east">East Region</option>
+                                <option value="west">West Region</option>
+                                <option value="central">Central Region</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="bg-light py-5 mt-5">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <h3 class="fw-bold text-primary" id="total-medicines">50+</h3>
+                <p class="text-muted">Medicines Tracked</p>
+            </div>
+            <div class="col-md-3">
+                <h3 class="fw-bold text-success" id="total-branches">20+</h3>
+                <p class="text-muted">Healthcare Facilities</p>
+            </div>
+            <div class="col-md-3">
+                <h3 class="fw-bold text-info" id="total-regions">5</h3>
+                <p class="text-muted">Regions Covered</p>
+            </div>
+            <div class="col-md-3">
+                <h3 class="fw-bold text-warning" id="daily-searches">1000+</h3>
+                <p class="text-muted">Daily Searches</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animate statistics
+    function animateValue(id, start, end, duration) {
+        let obj = document.getElementById(id);
+        let range = end - start;
+        let increment = end > start ? 1 : -1;
+        let step = Math.abs(Math.floor(duration / range));
+        let timer = setInterval(function() {
+            start += increment;
+            obj.textContent = start + (id === 'daily-searches' ? '+' : '');
+            if (start == end) {
+                clearInterval(timer);
+            }
+        }, step);
+    }
+
+    // Start animations when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            animateValue('total-medicines', 0, 50, 2000);
+            animateValue('total-branches', 0, 20, 2000);
+            animateValue('total-regions', 0, 5, 2000);
+            animateValue('daily-searches', 0, 1000, 2000);
+        }, 500);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{{ url_for('pharmacist.inventory') }}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50 me-2"></i>Back to Inventory
+        </a>
+    </div>
+
+    <!-- Inventory Form -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Update Stock Level</h6>
+                    {% if inventory_item %}
+                    <span class="badge bg-{{ 'danger' if inventory_item.quantity == 0 else 'warning' if inventory_item.quantity <= inventory_item.min_stock_level else 'success' }}">
+                        Current: {{ inventory_item.quantity }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <!-- Current Item Info -->
+                    {% if inventory_item %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Medicine:</strong> {{ inventory_item.medicine.name }}<br>
+                                        <strong>Category:</strong> {{ inventory_item.medicine.category|title }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Branch:</strong> {{ inventory_item.branch.name }}<br>
+                                        <strong>Region:</strong> {{ inventory_item.branch.region|title }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="branch_id" class="form-label">Branch</label>
+                                {{ form.branch_id(class="form-select" + (" is-invalid" if form.branch_id.errors else "")) }}
+                                {% for error in form.branch_id.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="medicine_id" class="form-label">Medicine</label>
+                                {{ form.medicine_id(class="form-select" + (" is-invalid" if form.medicine_id.errors else "")) }}
+                                {% for error in form.medicine_id.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="quantity" class="form-label">Current Quantity</label>
+                                {{ form.quantity(class="form-control" + (" is-invalid" if form.quantity.errors else ""), type="number", min="0") }}
+                                {% for error in form.quantity.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">Enter the current physical count of this medicine.</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="min_stock_level" class="form-label">Minimum Stock Level</label>
+                                {{ form.min_stock_level(class="form-control" + (" is-invalid" if form.min_stock_level.errors else ""), type="number", min="1") }}
+                                {% for error in form.min_stock_level.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">Alert when stock falls below this level.</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Stock Level Indicator -->
+                 <!-- Stock Level Indicator -->
+<div class="row mb-3">
+    <div class="col-12">
+        <label class="form-label">Stock Level Indicator</label>
+        <div class="progress mb-2" style="height: 25px;">
+            {% set quantity = form.quantity.data or 0 %}
+            {% set max_level = [quantity, 50]|max %}
+            {% set progress_percent = (quantity / max_level * 100)|round if max_level > 0 else 0 %}
+            <div class="progress-bar bg-success" role="progressbar" 
+               
+                 aria-valuenow="{{ quantity }}" aria-valuemin="0" aria-valuemax="{{ max_level }}">
+                {{ quantity }} units
+            </div>
+        </div>
+        <div class="d-flex justify-content-between small text-muted">
+            <span>0</span>
+            <span>Low Stock Level: {{ form.min_stock_level.data or 10 }}</span>
+            <span>{{ max_level }}+</span>
+        </div>
+    </div>
+</div>
+                        
+                        <!-- Notification Preview -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label">Status Preview</label>
+                                <div class="alert 
+                                    {% if quantity == 0 %}alert-danger
+                                    {% elif quantity <= (form.min_stock_level.data or 10) %}alert-warning
+                                    {% else %}alert-success{% endif %}">
+                                    <i class="fas 
+                                        {% if quantity == 0 %}fa-times-circle
+                                        {% elif quantity <= (form.min_stock_level.data or 10) %}fa-exclamation-triangle
+                                        {% else %}fa-check-circle{% endif %} me-2"></i>
+                                    
+                                    {% if quantity == 0 %}
+                                        <strong>Out of Stock:</strong> This medicine is currently unavailable.
+                                    {% elif quantity <= (form.min_stock_level.data or 10) %}
+                                        <strong>Low Stock:</strong> This medicine is running low. Consider restocking.
+                                    {% else %}
+                                        <strong>In Stock:</strong> This medicine is available with adequate stock.
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('pharmacist.inventory') }}" class="btn btn-secondary">Cancel</a>
+                                    {{ form.submit(class="btn btn-primary") }}
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Update progress bar and status preview in real-time
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('quantity');
+    const minStockInput = document.getElementById('min_stock_level');
+    const progressBar = document.querySelector('.progress-bar');
+    const statusAlert = document.querySelector('.alert');
+    
+    function updateStockIndicator() {
+        const quantity = parseInt(quantityInput.value) || 0;
+        const minStock = parseInt(minStockInput.value) || 10;
+        const maxLevel = Math.max(quantity, 50);
+        
+        // Update progress bar
+        const percentage = Math.min((quantity / maxLevel) * 100, 100);
+        progressBar.style.width = percentage + '%';
+        progressBar.textContent = quantity + ' units';
+        progressBar.setAttribute('aria-valuenow', quantity);
+        
+        // Update status alert
+        if (quantity === 0) {
+            statusAlert.className = 'alert alert-danger';
+            statusAlert.innerHTML = '<i class="fas fa-times-circle me-2"></i><strong>Out of Stock:</strong> This medicine is currently unavailable.';
+        } else if (quantity <= minStock) {
+            statusAlert.className = 'alert alert-warning';
+            statusAlert.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i><strong>Low Stock:</strong> This medicine is running low. Consider restocking.';
+        } else {
+            statusAlert.className = 'alert alert-success';
+            statusAlert.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>In Stock:</strong> This medicine is available with adequate stock.';
+        }
+    }
+    
+    quantityInput.addEventListener('input', updateStockIndicator);
+    minStockInput.addEventListener('input', updateStockIndicator);
+    
+    // Initial update
+    updateStockIndicator();
+});
+</script>
+{% endblock %}
