@@ -31,3 +31,5 @@ A modular web platform and healthcare portal built with Flask and SQLAlchemy des
 ├── static/               # Custom CSS styles, JavaScript & assets
 ├── templates/            # Dynamic Jinja2 HTML templates
 └── requirements.txt      # Python dependencies & packages
+
+git clone https://github.com/vivianmometo/lifeline-pharmacy-system.git
